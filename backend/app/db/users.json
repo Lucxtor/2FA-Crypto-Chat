@@ -1,0 +1,24 @@
+{
+  "1": {
+    "id": 1,
+    "username": "Luis",
+    "email": "luis@gmail.com",
+    "hash": "10320465377a1d57ce2243510e4426c38ccbf098096a6b7fedb59a0a10dd827aeec4d4e9d2c2fd58c8ef45fc6e332ed56e0d3ed91a111c92da361e58ee41ebb7",
+    "salt": "6576ae39431e53476d56518a25edc732",
+    "twoFactor": true,
+    "secret": {
+      "ascii": "T[&^oo@Z}()9{JHCXLbI!!zyyTLoM{(t",
+      "hex": "545b265e6f6f405a7d2829397b4a4843584c624921217a7979544c6f4d7b2874",
+      "base32": "KRNSMXTPN5AFU7JIFE4XWSSIINMEYYSJEEQXU6LZKRGG6TL3FB2A",
+      "otpauth_url": "otpauth://totp/SecretKey?secret=KRNSMXTPN5AFU7JIFE4XWSSIINMEYYSJEEQXU6LZKRGG6TL3FB2A"
+    }
+  },
+  "2": {
+    "id": 2,
+    "username": "Luis2",
+    "email": "luis@gmail.com",
+    "hash": "6cf7aa23d77b1168b85e7afd83fb60dffb0db7e6b0ab661d5dd9ecd8600485eb929768b813eac3a6bdb1363809b450326dc7db8b0974d6c539d327153c3350d2",
+    "salt": "413ab4e378529937b2f6c1daeabb0a05",
+    "twoFactor": false
+  }
+}

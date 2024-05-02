@@ -1,5 +1,9 @@
 import express, { Request, Response } from "express";
-import { userRegistration } from "../controllers/userController";
+import {
+  activate2FA,
+  authCode,
+  userRegistration,
+} from "../controllers/userController";
 
 const router = express.Router();
 
@@ -11,10 +15,12 @@ router.get("/", (req: Request, res: Response) => {
 router.post("/register", userRegistration);
 
 // Ativar 2° fator Google Auth
+router.post("/activate2FA", activate2FA);
 
 // Login do usuário
 
 // Envio do 2° fator para o servidor
+router.post("/authCode", authCode);
 
 // Troca de msg cifrada
 
