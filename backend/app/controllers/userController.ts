@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import * as crypto from "crypto";
 import speakeasy from "speakeasy";
 import qrcode from "qrcode";
-import { getUserById, getUsers, saveUsers } from "../repositories/user";
+import { getUsers, saveUsers, getUserIdByUsername } from "../repositories/user";
 
 // Registrar usuário
 export const userRegistration = async (req: Request, res: Response) => {
@@ -64,7 +64,7 @@ export const activate2FA = async (req: Request, res: Response) => {
       res.send({ qrcode: qrcode });
     });
   } else {
-    res.status(400).send("Erro ao gerar otp");
+    res.status(400).send("Error generating otp");
   }
 };
 
@@ -75,6 +75,38 @@ export const login = async (req: Request, res: Response) => {
   // comparar o token scrypt com o token armazenado
   // Inválido -> Erro
   // Valido -> gerar o código de 2FA e retorna para o cliente
+
+  const { username, token, time } = req.body;
+
+  if (!username || !token || !time) {
+    return res.status(400).send("missing params");
+  }
+
+  const pass = username + token;
+
+  const users = getUsers();
+
+  const id = getUserIdByUsername(username);
+
+  if (id == undefined) {
+    return res.status(400).send("user not found");
+  }
+
+  const salt = users[id]["salt"];
+
+  const hash = crypto
+    .scryptSync(pass, salt, 64, {
+      cost: 2048,
+      blockSize: 8,
+      parallelization: 1,
+    })
+    .toString("hex");
+
+  if (hash == users[id]["hash"]) {
+    res.send("Envie o código do seu autenticador");
+  } else {
+    res.status(401).send("wrong auth code");
+  }
 };
 
 // Verificação do 2° fator
@@ -99,14 +131,19 @@ export const authCode = async (req: Request, res: Response) => {
     token: code,
   });
 
-  if (verified) {
-    res.send("Ok");
-  } else {
+  if (!verified) {
     res.status(401).send("wrong auth code");
   }
 
-  // Gera o código no servidor
-  // Compara
+  const salt = crypto.randomBytes(16).toString("hex");
+
+  const IV = "Não sei o que é ou pra que serve";
+
+  const sessionToken = crypto
+    .pbkdf2Sync(code, salt, 1000, 64, "sha512")
+    .toString("hex");
+
+  res.send({ salt, IV, sessionToken });
 };
 
 // Troca de msg

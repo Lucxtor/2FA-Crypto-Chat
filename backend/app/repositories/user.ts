@@ -13,10 +13,15 @@ export const getUsers = () => {
   return JSON.parse(data.toString());
 };
 
-export const getUserById = (id: number) => {
+export const getUserIdByUsername = (username: string) => {
   const data = getUsers();
 
-  const user = data[id];
-
-  return user;
+  for (const id in data) {
+    if (data.hasOwnProperty(id)) {
+      if (data[id].username === username) {
+        return id;
+      }
+    }
+  }
+  return undefined;
 };
