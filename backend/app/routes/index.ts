@@ -5,6 +5,7 @@ import {
   login,
   userRegistration,
 } from "../controllers/userController";
+import { receiveMessage } from "../controllers/messageController";
 
 const router = express.Router();
 
@@ -25,6 +26,6 @@ router.post("/login", login);
 router.post("/authCode", authCode);
 
 // Troca de msg cifrada
-router.post("/message");
+router.post("/message", receiveMessage);
 
 export default router;

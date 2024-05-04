@@ -1,10 +1,58 @@
 import { Request, Response } from "express";
 import * as crypto from "crypto";
+import { getUsers, saveUsers } from "../repositories/user";
 
 export const receiveMessage = async (req: Request, res: Response) => {
-  const { message, sessionToken } = req.body;
+  const { id, cipherMsg } = req.body;
 
-  if (!message || !sessionToken) {
+  if (!id || !cipherMsg) {
     return res.status(400).send("missing params");
   }
+
+  const users = getUsers();
+
+  if (users[id] == undefined) {
+    res.status(400).send("user not found");
+  }
+
+  const sessionToken = users[id]["session"];
+
+  const hashIv = crypto.createHash("sha256");
+
+  hashIv.update(
+    users[id]["username"] + users[id]["msgCount"] + users[id]["email"]
+  );
+
+  let iv = hashIv.digest("base64");
+
+  users[id]["msgCount"] += 0;
+
+  const decipher = crypto.createDecipheriv("aes-256-gcm", sessionToken, iv);
+
+  const msg = decipher.update(cipherMsg, "hex", "utf8");
+
+  console.log(msg);
+
+  const newHashIv = crypto.createHash("sha256");
+
+  newHashIv.update(
+    users[id]["username"] + users[id]["msgCount"] + users[id]["email"]
+  );
+
+  let newIv = newHashIv.digest("base64");
+
+  users[id]["msgCount"] += 0;
+  users[id]["session"] = sessionToken;
+
+  saveUsers(users);
+
+  const cipher = crypto.createCipheriv("aes-256-gcm", sessionToken, newIv);
+
+  const newMsg = cipher.update(
+    "Recebida a msg '" + msg + "' com sucesso!",
+    "utf8",
+    "hex"
+  );
+
+  res.status(200).send({ newMsg });
 };

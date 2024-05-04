@@ -28,7 +28,15 @@ export const userRegistration = async (req: Request, res: Response) => {
 
   const id = Object.keys(users).length + 1;
 
-  const newUser = { id, username, email, hash, salt, twoFactor: false };
+  const newUser = {
+    id,
+    username,
+    email,
+    hash,
+    salt,
+    twoFactor: false,
+    msgCount: 0,
+  };
 
   users[id] = newUser;
   saveUsers(users);
@@ -129,26 +137,43 @@ export const authCode = async (req: Request, res: Response) => {
     secret: secret.base32,
     encoding: "base32",
     token: code,
+    window: 2,
   });
 
   if (!verified) {
     res.status(401).send("wrong auth code");
   }
 
-  const salt = crypto.randomBytes(16).toString("hex");
+  const hashSalt = crypto.createHash("sha256");
 
-  const IV = "Não sei o que é ou pra que serve";
+  hashSalt.update(users[id]["username"]);
+
+  const salt = hashSalt.digest("base64");
 
   const sessionToken = crypto
-    .pbkdf2Sync(code, salt, 1000, 64, "sha512")
+    .pbkdf2Sync(code, salt, 1000, 16, "sha512")
     .toString("hex");
 
-  res.send({ salt, IV, sessionToken });
-};
+  const hashIv = crypto.createHash("sha256");
 
-// Troca de msg
-export const msg = async (req: Request, res: Response) => {
-  // Receber a msg cifrada
-  // Logar a msg decifrada para conferencia
-  // Responder a msg cifrada
+  hashIv.update(
+    users[id]["username"] + users[id]["msgCount"] + users[id]["email"]
+  );
+
+  let iv = hashIv.digest("base64");
+
+  users[id]["msgCount"] += 0;
+  users[id]["session"] = sessionToken;
+
+  saveUsers(users);
+
+  const cipher = crypto.createCipheriv("aes-256-gcm", sessionToken, iv);
+
+  const msg = cipher.update(
+    "Logado com sucesso, envie a sua primeira msg",
+    "utf8",
+    "hex"
+  );
+
+  res.status(200).send({ sessionToken, salt, iv, msg });
 };
