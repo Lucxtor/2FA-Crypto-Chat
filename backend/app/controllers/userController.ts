@@ -41,7 +41,7 @@ export const userRegistration = async (req: Request, res: Response) => {
   users[id] = newUser;
   saveUsers(users);
 
-  return res.send(newUser);
+  return res.status(201).send(newUser);
 };
 
 // Habilitar 2° fator
@@ -55,7 +55,7 @@ export const activate2FA = async (req: Request, res: Response) => {
   const users = getUsers();
 
   if (users[id] == undefined) {
-    res.status(400).send("user not found");
+    return res.status(400).send("user not found");
   }
 
   // Gerar a OTP
@@ -69,10 +69,10 @@ export const activate2FA = async (req: Request, res: Response) => {
   const otp = secret.otpauth_url;
   if (otp != undefined) {
     await qrcode.toDataURL(otp, (err, qrcode) => {
-      res.send({ qrcode: qrcode });
+      return res.send({ qrcode: qrcode });
     });
   } else {
-    res.status(400).send("Error generating otp");
+    return res.status(400).send("Error generating otp");
   }
 };
 
@@ -84,9 +84,9 @@ export const login = async (req: Request, res: Response) => {
   // Inválido -> Erro
   // Valido -> gerar o código de 2FA e retorna para o cliente
 
-  const { username, token, time } = req.body;
+  const { username, token } = req.body;
 
-  if (!username || !token || !time) {
+  if (!username || !token) {
     return res.status(400).send("missing params");
   }
 
@@ -111,9 +111,9 @@ export const login = async (req: Request, res: Response) => {
     .toString("hex");
 
   if (hash == users[id]["hash"]) {
-    res.send("Envie o código do seu autenticador");
+    return res.send(id);
   } else {
-    res.status(401).send("wrong auth code");
+    return res.status(401).send("wrong auth code");
   }
 };
 
@@ -128,7 +128,7 @@ export const authCode = async (req: Request, res: Response) => {
   const users = getUsers();
 
   if (users[id] == undefined) {
-    res.status(400).send("user not found");
+    return res.status(400).send("user not found");
   }
 
   const secret = users[id]["secret"];
@@ -141,7 +141,7 @@ export const authCode = async (req: Request, res: Response) => {
   });
 
   if (!verified) {
-    res.status(401).send("wrong auth code");
+    return res.status(401).send("wrong auth code");
   }
 
   const hashSalt = crypto.createHash("sha256");
@@ -154,26 +154,12 @@ export const authCode = async (req: Request, res: Response) => {
     .pbkdf2Sync(code, salt, 1000, 16, "sha512")
     .toString("hex");
 
-  const hashIv = crypto.createHash("sha256");
-
-  hashIv.update(
-    users[id]["username"] + users[id]["msgCount"] + users[id]["email"]
-  );
-
-  let iv = hashIv.digest("base64");
-
-  users[id]["msgCount"] += 0;
+  users[id]["msgCount"] = 0;
   users[id]["session"] = sessionToken;
 
   saveUsers(users);
 
-  const cipher = crypto.createCipheriv("aes-256-gcm", sessionToken, iv);
+  const user = users[id];
 
-  const msg = cipher.update(
-    "Logado com sucesso, envie a sua primeira msg",
-    "utf8",
-    "hex"
-  );
-
-  res.status(200).send({ sessionToken, salt, iv, msg });
+  return res.status(200).send({ user });
 };

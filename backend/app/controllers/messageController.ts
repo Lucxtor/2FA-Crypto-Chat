@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as crypto from "crypto";
-import { getUsers, saveUsers } from "../repositories/user";
+import { getUserIdByUsername, getUsers, saveUsers } from "../repositories/user";
 
 export const receiveMessage = async (req: Request, res: Response) => {
   const { id, cipherMsg } = req.body;
@@ -11,21 +11,19 @@ export const receiveMessage = async (req: Request, res: Response) => {
 
   const users = getUsers();
 
-  if (users[id] == undefined) {
+  if (id == undefined) {
     res.status(400).send("user not found");
   }
 
-  const sessionToken = users[id]["session"];
+  const sessionToken = users[id!]["session"];
 
   const hashIv = crypto.createHash("sha256");
 
-  hashIv.update(
-    users[id]["username"] + users[id]["msgCount"] + users[id]["email"]
-  );
+  hashIv.update(users[id!]["username"] + users[id!]["msgCount"]);
 
   let iv = hashIv.digest("base64");
 
-  users[id]["msgCount"] += 0;
+  users[id!]["msgCount"] += 1;
 
   const decipher = crypto.createDecipheriv("aes-256-gcm", sessionToken, iv);
 
@@ -35,14 +33,12 @@ export const receiveMessage = async (req: Request, res: Response) => {
 
   const newHashIv = crypto.createHash("sha256");
 
-  newHashIv.update(
-    users[id]["username"] + users[id]["msgCount"] + users[id]["email"]
-  );
+  newHashIv.update(users[id!]["username"] + users[id!]["msgCount"]);
 
   let newIv = newHashIv.digest("base64");
 
-  users[id]["msgCount"] += 0;
-  users[id]["session"] = sessionToken;
+  users[id!]["msgCount"] += 1;
+  users[id!]["session"] = sessionToken;
 
   saveUsers(users);
 
