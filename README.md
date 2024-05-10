@@ -11,7 +11,7 @@ Work for the subject INE5680 - Information and Network Security at the Federal U
 1. Install dependencies in the "backend" folder by running `npm install`;
 2. Run the backend with `npm run start`;
 3. Install dependencies in the "frontend" folder by running `npm install`;
-4. Run the frontend with `npm next build` and then `npm next start`;
+4. Run the frontend with `npm run build` and then `npm run start`;
 5. Access it: [http://localhost:3000/register](http://localhost:3000/register)
 
 ## Testing application
